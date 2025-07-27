@@ -13,7 +13,7 @@ pipeline {
   stages {
     stage('Cloner le dépôt') {
       steps {
-        git 'https://github.com/<ton-utilisateur>/<ton-repo>.git'
+        git 'https://github.com/mmftp/devopsProjet'
       }
     }
 
