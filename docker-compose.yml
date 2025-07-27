@@ -52,8 +52,8 @@ services:
     networks:
       - front-tier
   jenkins:
-    build: ./jenkins
     image: jenkins/jenkins:lts
+    #build: ./jenkins
     user: root
     ports:
       - "8080:8080"
@@ -61,6 +61,7 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+    restart: on-failure
     networks:
       - back-tier
    
@@ -80,13 +81,13 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.30.0.0/16
+        - subnet: 172.40.0.0/16
 
   back-tier:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.31.0.0/16
+        - subnet: 172.41.0.0/16
 volumes:
   db-data:
   redis-data:

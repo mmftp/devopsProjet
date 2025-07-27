@@ -13,19 +13,19 @@ pipeline {
   stages {
     stage('Cloner le dépôt') {
       steps {
-        git 'https://github.com/mmftp/devopsProjet'
+        git branch: 'main', url: 'https://github.com/mmftp/devopsProjet'
       }
     }
 
     stage('Construire les images') {
       steps {
-        sh 'docker compose build'
+        sh 'docker-compose build'
       }
     }
 
     stage('Lancer les services') {
       steps {
-        sh 'docker compose up -d'
+        sh 'docker-compose up -d'
       }
     }
 
@@ -47,4 +47,3 @@ pipeline {
     }
   }
 }
-
