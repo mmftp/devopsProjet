@@ -51,20 +51,19 @@ services:
         condition: service_healthy
     networks:
       - front-tier
-  jenkins:
-    image: jenkins/jenkins:lts
+  #jenkins:
+    #image: jenkins/jenkins:lts
     #build: ./jenkins
-    user: root
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: on-failure
-    networks:
-      - back-tier
-   
+    #user: root
+    #ports:
+      #- "8080:8080"
+      #- "50000:50000"
+    #volumes:
+      #- jenkins_home:/var/jenkins_home
+      #- /var/run/docker.sock:/var/run/docker.sock
+    #restart: on-failure
+    #networks:
+      #- back-tier
 
   worker:
     build: ./worker
