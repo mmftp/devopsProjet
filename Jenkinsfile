@@ -1,0 +1,50 @@
+pipeline {
+  agent any
+
+  environment {
+    VOTING_PORT = '5002'
+    RESULT_PORT = '5001'
+    POSTGRES_USER = 'postgres'
+    POSTGRES_PASSWORD = 'postgres'
+    OPTION_A = 'Cats'
+    OPTION_B = 'Dogs'
+  }
+
+  stages {
+    stage('Cloner le dépôt') {
+      steps {
+        git 'https://github.com/<ton-utilisateur>/<ton-repo>.git'
+      }
+    }
+
+    stage('Construire les images') {
+      steps {
+        sh 'docker compose build'
+      }
+    }
+
+    stage('Lancer les services') {
+      steps {
+        sh 'docker compose up -d'
+      }
+    }
+
+    stage('Vérifier l’état des services') {
+      steps {
+        sh 'docker ps'
+        sh 'curl -f http://localhost:${VOTING_PORT} || exit 1'
+        sh 'curl -f http://localhost:${RESULT_PORT} || exit 1'
+      }
+    }
+  }
+
+  post {
+    failure {
+      echo 'Le pipeline a échoué.'
+    }
+    success {
+      echo 'Déploiement réussi !'
+    }
+  }
+}
+

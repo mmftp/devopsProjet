@@ -1,0 +1,94 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - back-tier
+    volumes:
+      - redis-data:/data  
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - back-tier
+    volumes:
+      - db-data:/var/lib/postgresql/data  
+
+  voting-app:
+    build: ./vote
+    environment:
+      OPTION_A: ${OPTION_A}
+      OPTION_B: ${OPTION_B}
+    ports:
+      - "${VOTING_PORT}:80"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - front-tier
+      - back-tier
+
+  result-app:
+    build: ./result
+    ports:
+      - "${RESULT_PORT}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - front-tier
+  jenkins:
+    build: ./jenkins
+    image: jenkins/jenkins:lts
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - back-tier
+   
+
+  worker:
+    build: ./worker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - back-tier
+
+networks:
+  front-tier:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+
+  back-tier:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/16
+volumes:
+  db-data:
+  redis-data:
+  jenkins_home:
+        
