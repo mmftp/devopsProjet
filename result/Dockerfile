@@ -18,8 +18,6 @@ RUN npm ci && \
 # Copie le code + les certificats
 COPY . .
 
-# Copie les certificats SSL dans un répertoire standard
-COPY certs/ /usr/local/certs/
 
 #Expose port HTTPS
 ENV PORT 443
