@@ -7,7 +7,6 @@ RUN apt-get update && \
 
 WORKDIR /usr/local/app
 
-# have nodemon available for local dev use (file watching)
 RUN npm install -g nodemon
 
 COPY package*.json ./
@@ -16,10 +15,16 @@ RUN npm ci && \
  npm cache clean --force && \
  mv /usr/local/app/node_modules /node_modules
 
+# Copie le code + les certificats
 COPY . .
 
-ENV PORT 80
-EXPOSE 80
+# Copie les certificats SSL dans un répertoire standard
+COPY certs/ /usr/local/certs/
+
+#Expose port HTTPS
+ENV PORT 443
+EXPOSE 443
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "server.js"]
+

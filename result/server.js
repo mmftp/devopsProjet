@@ -1,15 +1,28 @@
-var express = require('express'),
-    async = require('async'),
-    { Pool } = require('pg'),
-    cookieParser = require('cookie-parser'),
-    app = express(),
-    server = require('http').Server(app),
-    io = require('socket.io')(server);
+const path = require('path');
+const express = require('express');
+const https = require('https');
+const fs = require('fs');
+const async = require('async');
+const { Pool } = require('pg');
+const cookieParser = require('cookie-parser');
 
-var port = process.env.PORT || 4000;
+const app = express();
+
+if (!fs.existsSync('/app/certs/key.pem') || !fs.existsSync('/app/certs/cert.pem')) {
+  console.error("Certificats SSL non trouvés. Vérifie le volume Docker ou le pipeline Jenkins.");
+  process.exit(1);
+}
+
+const server = https.createServer({
+  key: fs.readFileSync('/app/certs/key.pem'),
+  cert: fs.readFileSync('/app/certs/cert.pem')
+}, app);
+
+const io = require('socket.io')(server);
+
+const port = process.env.PORT || 4000;
 
 io.on('connection', function (socket) {
-
   socket.emit('message', { text : 'Welcome!' });
 
   socket.on('subscribe', function (data) {
@@ -17,12 +30,12 @@ io.on('connection', function (socket) {
   });
 });
 
-var pool = new Pool({
+const pool = new Pool({
   connectionString: 'postgres://postgres:postgres@db/postgres'
 });
 
 async.retry(
-  {times: 1000, interval: 1000},
+  { times: 1000, interval: 1000 },
   function(callback) {
     pool.connect(function(err, client, done) {
       if (err) {
@@ -45,16 +58,16 @@ function getVotes(client) {
     if (err) {
       console.error("Error performing query: " + err);
     } else {
-      var votes = collectVotesFromResult(result);
+      const votes = collectVotesFromResult(result);
       io.sockets.emit("scores", JSON.stringify(votes));
     }
 
-    setTimeout(function() {getVotes(client) }, 1000);
+    setTimeout(function() { getVotes(client); }, 1000);
   });
 }
 
 function collectVotesFromResult(result) {
-  var votes = {a: 0, b: 0};
+  const votes = { a: 0, b: 0 };
 
   result.rows.forEach(function (row) {
     votes[row.vote] = parseInt(row.count);
@@ -64,7 +77,7 @@ function collectVotesFromResult(result) {
 }
 
 app.use(cookieParser());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/views'));
 
 app.get('/', function (req, res) {
@@ -72,6 +85,6 @@ app.get('/', function (req, res) {
 });
 
 server.listen(port, function () {
-  var port = server.address().port;
-  console.log('App running on port ' + port);
+  console.log('App running on HTTPS port ' + port);
 });
+
