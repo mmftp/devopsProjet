@@ -17,27 +17,6 @@ pipeline {
       }
     }
 
-    stage('Générer les certificats SSL') {
-      steps {
-        script {
-          echo "Génération des certificats SSL auto-signés..."
-          
-          // Créer le dossier certs s'il n'existe pas
-          sh 'mkdir -p certs'
-          
-          // Générer la clé privée et le certificat auto-signé
-          sh '''
-          openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem \
-            -days 365 -nodes -subj "/C=SN/ST=Dakar/L=Dakar/O=DevOps/OU=IT/CN=localhost"
-          
-          # Vérifier que les certificats ont été créés
-          ls -la certs/
-          echo "Certificats générés avec succès !"
-          '''
-        }
-      }
-    }
-
     stage('Construire les images') {
       steps {
         sh 'docker-compose build'
@@ -75,15 +54,11 @@ pipeline {
   }
 
   post {
-    always {
-      // Nettoyer les certificats temporaires
-      sh 'rm -rf certs/'
-    }
     failure {
       echo 'Le pipeline a échoué.'
     }
     success {
-      echo 'Déploiement réussi !'
+      echo 'Déploiement réussi ! result-app accessible sur https://localhost:5001'
     }
   }
 }
