@@ -17,6 +17,33 @@ pipeline {
       }
     }
 
+    stage('Préparer les certificats SSL') {
+      steps {
+        script {
+          echo "Récupération des certificats SSL depuis Jenkins Credentials..."
+          
+          // Créer le dossier certs
+          sh 'mkdir -p certs'
+          
+          // Récupérer les certificats depuis Jenkins Credentials
+          withCredentials([
+            file(credentialsId: 'ssl-cert', variable: 'SSL_CERT'),
+            file(credentialsId: 'ssl-key', variable: 'SSL_KEY')
+          ]) {
+            sh '''
+            cp $SSL_CERT certs/cert.pem
+            cp $SSL_KEY certs/key.pem
+            chmod 600 certs/key.pem
+            chmod 644 certs/cert.pem
+            
+            # Vérifier que les certificats sont présents
+            ls -la certs/
+            '''
+          }
+        }
+      }
+    }
+
     stage('Construire les images') {
       steps {
         sh 'docker-compose build'
@@ -29,16 +56,35 @@ pipeline {
       }
     }
 
-    stage('Vérifier l’état des services') {
+    stage('Tester result-app HTTPS') {
       steps {
-        sh 'docker ps'
-        sh 'curl -f http://localhost:${VOTING_PORT} || exit 1'
-        sh 'curl -f http://localhost:${RESULT_PORT} || exit 1'
+        script {
+          echo "Test de result-app en HTTPS..."
+          
+          sh '''
+          for i in {1..15}; do
+            echo "Tentative $i : vérification HTTPS..."
+            if docker exec votingappproject-result-app-1 curl -k -sf https://localhost:443 > /dev/null; then
+              echo "result-app accessible en HTTPS !"
+              exit 0
+            fi
+            sleep 5
+          done
+          
+          echo "Échec du test HTTPS"
+          docker logs votingappproject-result-app-1
+          exit 1
+          '''
+        }
       }
     }
   }
 
   post {
+    always {
+      // Nettoyer les certificats temporaires
+      sh 'rm -rf certs/'
+    }
     failure {
       echo 'Le pipeline a échoué.'
     }
