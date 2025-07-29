@@ -17,29 +17,23 @@ pipeline {
       }
     }
 
-    stage('Préparer les certificats SSL') {
+    stage('Générer les certificats SSL') {
       steps {
         script {
-          echo "Récupération des certificats SSL depuis Jenkins Credentials..."
+          echo "Génération des certificats SSL auto-signés..."
           
-          // Créer le dossier certs
+          // Créer le dossier certs s'il n'existe pas
           sh 'mkdir -p certs'
           
-          // Récupérer les certificats depuis Jenkins Credentials
-          withCredentials([
-            file(credentialsId: 'ssl-cert', variable: 'SSL_CERT'),
-            file(credentialsId: 'ssl-key', variable: 'SSL_KEY')
-          ]) {
-            sh '''
-            cp $SSL_CERT certs/cert.pem
-            cp $SSL_KEY certs/key.pem
-            chmod 600 certs/key.pem
-            chmod 644 certs/cert.pem
-            
-            # Vérifier que les certificats sont présents
-            ls -la certs/
-            '''
-          }
+          // Générer la clé privée et le certificat auto-signé
+          sh '''
+          openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem \
+            -days 365 -nodes -subj "/C=SN/ST=Dakar/L=Dakar/O=DevOps/OU=IT/CN=localhost"
+          
+          # Vérifier que les certificats ont été créés
+          ls -la certs/
+          echo "Certificats générés avec succès !"
+          '''
         }
       }
     }
