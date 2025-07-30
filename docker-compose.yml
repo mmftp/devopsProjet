@@ -29,12 +29,14 @@ services:
       - db-data:/var/lib/postgresql/data  
 
   voting-app:
+    # 🏷️ Tag unique pour le service Voting-app dans un seul repo Docker Hub
+    image: docker.io/${DOCKERHUB_NAMESPACE}/voting-app:voting-app-${IMAGE_TAG}
     build: ./vote
     environment:
       OPTION_A: ${OPTION_A}
       OPTION_B: ${OPTION_B}
     ports:
-      - "${VOTING_PORT}:443"  # Port HTTPS pour voting-app
+      - "${VOTING_PORT}:443"
     depends_on:
       redis:
         condition: service_healthy
@@ -43,6 +45,8 @@ services:
       - back-tier
 
   result-app:
+    # 🏷️ Tag unique pour le service Result-app dans le même repo Docker Hub
+    image: docker.io/${DOCKERHUB_NAMESPACE}/voting-app:result-app-${IMAGE_TAG}
     build: ./result
     ports:
       - "${RESULT_PORT}:443"
@@ -51,9 +55,10 @@ services:
         condition: service_healthy
     networks:
       - front-tier
-    # Volume supprimé car les certificats sont générés dans l'image
 
   worker:
+    # 🏷️ Tag unique pour le service Worker dans le même repo Docker Hub
+    image: docker.io/${DOCKERHUB_NAMESPACE}/voting-app:worker-${IMAGE_TAG}
     build: ./worker
     depends_on:
       db:
@@ -75,7 +80,9 @@ networks:
     ipam:
       config:
         - subnet: 172.41.0.0/16
+
 volumes:
   db-data:
   redis-data:
   jenkins_home:
+
