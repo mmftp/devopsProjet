@@ -12,6 +12,9 @@ RUN apt-get update && \
 RUN curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose && \
     chmod +x /usr/local/bin/docker-compose    
 
+# Ajouter l'utilisateur Jenkins au groupe docker
+RUN usermod -aG docker jenkins
+
 # Revenons à l'utilisateur Jenkins par défaut
 USER jenkins
 
