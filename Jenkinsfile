@@ -46,6 +46,20 @@ pipeline {
         sh 'docker-compose build'
       }
     }
+    stage('Cleanup Docker Networks') {
+    steps {
+        sh '''
+            # Stop and remove any existing containers
+            docker-compose down --remove-orphans || true
+            
+            # Remove unused networks
+            docker network prune -f || true
+            
+            # Remove project-specific networks if they exist
+            docker network rm votingappproject_front-tier votingappproject_back-tier || true
+        '''
+    }
+}
 
     stage('Démarrer les services') {
       steps {
@@ -225,9 +239,8 @@ pipeline {
 
     always {
       echo 'Nettoyage des ressources...'
-      // Optionnel : arrêt / nettoyage si tu ne veux pas garder les services en route
+      // Optionnel : arrêt / nettoyage si je ne veux pas garder les services en route
       // sh 'docker-compose down -v'
     }
   }
 }
-
